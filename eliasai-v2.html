@@ -1007,6 +1007,113 @@ footer{
   .cta-wrap{padding:36px 16px}
   .cta-wrap h2{font-size:28px}
 }
+
+/* ─────────────────────────────────────────────
+   CURSOR GLOW
+───────────────────────────────────────────── */
+.cursor-glow{
+  position:fixed;width:480px;height:480px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,217,146,.055) 0%,transparent 65%);
+  pointer-events:none;z-index:0;
+  transform:translate(-50%,-50%);
+  will-change:left,top;
+}
+
+/* ─────────────────────────────────────────────
+   HERO CANVAS  (particles)
+───────────────────────────────────────────── */
+#hero-canvas{
+  position:absolute;inset:0;
+  pointer-events:none;z-index:0;
+}
+
+/* ─────────────────────────────────────────────
+   3D TILT CARDS
+───────────────────────────────────────────── */
+.hero-card,.svc-card{
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+.hero-card .card-body > *,
+.svc-card > *{
+  transform:translateZ(0);
+  position:relative;z-index:1;
+}
+
+/* ─────────────────────────────────────────────
+   CARD SPOTLIGHT (mouse-track glow)
+───────────────────────────────────────────── */
+.svc-card::before{
+  content:'';position:absolute;inset:0;border-radius:12px;
+  background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(0,217,146,.07),transparent 70%);
+  opacity:0;transition:opacity .35s;pointer-events:none;z-index:0;
+}
+.svc-card:hover::before{opacity:1}
+
+/* ─────────────────────────────────────────────
+   TYPEWRITER
+───────────────────────────────────────────── */
+.tw-cursor{
+  display:inline-block;width:3px;height:.9em;
+  background:var(--green);border-radius:1px;
+  margin-left:3px;vertical-align:middle;
+  animation:blink 1s step-end infinite;
+}
+
+/* ─────────────────────────────────────────────
+   STAT COUNTER  (number roll)
+───────────────────────────────────────────── */
+@keyframes count-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.stat.counted .stat-val{animation:count-up .4s ease forwards}
+
+/* ─────────────────────────────────────────────
+   MAGNETIC BUTTONS
+───────────────────────────────────────────── */
+.btn-solid,.btn-ghost-green,.nav-pill{
+  transition:all .2s,transform .3s cubic-bezier(.175,.885,.32,1.275);
+}
+
+/* ─────────────────────────────────────────────
+   SPLIT TEXT REVEAL  (hero h1 words)
+───────────────────────────────────────────── */
+@keyframes word-in{
+  from{opacity:0;transform:translateY(24px) skewY(3deg)}
+  to  {opacity:1;transform:translateY(0)    skewY(0deg)}
+}
+.word-anim{
+  display:inline-block;
+  opacity:0;
+  animation:word-in .55s cubic-bezier(.22,1,.36,1) forwards;
+}
+
+/* ─────────────────────────────────────────────
+   SCROLL PROGRESS BAR
+───────────────────────────────────────────── */
+#scroll-bar{
+  position:fixed;top:0;left:0;height:2px;
+  background:linear-gradient(90deg,var(--green),var(--purple));
+  z-index:999;width:0%;transition:width .1s linear;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION SLIDE-IN (enhanced reveal)
+───────────────────────────────────────────── */
+@keyframes slide-fade-in{
+  from{opacity:0;transform:translateY(40px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+.reveal.in{
+  animation:slide-fade-in .65s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ─────────────────────────────────────────────
+   REDUCED MOTION
+───────────────────────────────────────────── */
+@media(prefers-reduced-motion:reduce){
+  .word-anim,.reveal.in{animation:none;opacity:1;transform:none}
+  #scroll-bar{display:none}
+  .cursor-glow{display:none}
+}
 </style>
 </head>
 <body>
@@ -1061,7 +1168,10 @@ footer{
 <!-- ═══════════════════════════════════════════
      HERO
 ═══════════════════════════════════════════ -->
+<div id="scroll-bar" aria-hidden="true"></div>
+
 <section class="hero" aria-labelledby="h1">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="hero-grid">
 
@@ -1553,38 +1663,260 @@ footer{
 ═══════════════════════════════════════════ -->
 <script>
 (function(){
-  // ── Burger menu ──────────────────────────
-  const burger  = document.getElementById('burger');
-  const drawer  = document.getElementById('drawer');
-  burger.addEventListener('click', () => {
-    const open = drawer.classList.toggle('open');
-    burger.classList.toggle('x', open);
-    burger.setAttribute('aria-expanded', open);
-  });
-  drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
-    drawer.classList.remove('open');
-    burger.classList.remove('x');
-    burger.setAttribute('aria-expanded', 'false');
-  }));
 
-  // ── Nav scroll tint ───────────────────────
-  const nav = document.getElementById('nav');
-  addEventListener('scroll', () => {
-    nav.style.borderBottomColor = scrollY > 20
-      ? 'rgba(61,58,57,.55)'
-      : 'rgba(61,58,57,.35)';
-  }, {passive:true});
+/* ══════════════════════════════════════════════
+   1. BURGER MENU
+══════════════════════════════════════════════ */
+const burger = document.getElementById('burger');
+const drawer = document.getElementById('drawer');
+burger.addEventListener('click', () => {
+  const open = drawer.classList.toggle('open');
+  burger.classList.toggle('x', open);
+  burger.setAttribute('aria-expanded', open);
+});
+drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  drawer.classList.remove('open');
+  burger.classList.remove('x');
+  burger.setAttribute('aria-expanded', 'false');
+}));
 
-  // ── IntersectionObserver reveal ───────────
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+/* ══════════════════════════════════════════════
+   2. SCROLL PROGRESS BAR
+══════════════════════════════════════════════ */
+const scrollBar = document.getElementById('scroll-bar');
+function updateScrollBar() {
+  const pct = scrollY / (document.body.scrollHeight - innerHeight) * 100;
+  scrollBar.style.width = pct + '%';
+}
+
+/* ══════════════════════════════════════════════
+   3. NAV SCROLL TINT
+══════════════════════════════════════════════ */
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => {
+  nav.style.borderBottomColor = scrollY > 20
+    ? 'rgba(61,58,57,.6)'
+    : 'rgba(61,58,57,.35)';
+  updateScrollBar();
+}, {passive:true});
+
+/* ══════════════════════════════════════════════
+   4. CURSOR GLOW  (desktop only)
+══════════════════════════════════════════════ */
+const isMobile = matchMedia('(hover:none)').matches;
+if (!isMobile) {
+  const glow = document.createElement('div');
+  glow.className = 'cursor-glow';
+  document.body.appendChild(glow);
+  let tx = innerWidth/2, ty = innerHeight/2, cx = tx, cy = ty;
+  document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+  (function loopGlow() {
+    cx += (tx - cx) * 0.07;
+    cy += (ty - cy) * 0.07;
+    glow.style.left = cx + 'px';
+    glow.style.top  = cy + 'px';
+    requestAnimationFrame(loopGlow);
+  })();
+}
+
+/* ══════════════════════════════════════════════
+   5. HERO PARTICLE CANVAS
+══════════════════════════════════════════════ */
+(function initParticles() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const hero   = canvas.parentElement;
+  const ctx    = canvas.getContext('2d');
+  let W, H, pts;
+
+  function resize() {
+    W = canvas.width  = hero.offsetWidth;
+    H = canvas.height = hero.offsetHeight;
+  }
+
+  function makeParticles() {
+    const count = Math.min(80, Math.floor(W * H / 12000));
+    pts = Array.from({length: count}, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - .5) * .3,
+      vy: (Math.random() - .5) * .3,
+      r:  Math.random() * 1.5 + .5,
+      a:  Math.random()
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(0,217,146,${p.a * .5})`;
+      ctx.fill();
     });
-  }, {threshold:.1, rootMargin:'0px 0px -48px 0px'});
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+    // connect nearby particles
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i+1; j < pts.length; j++) {
+        const dx = pts[i].x - pts[j].x;
+        const dy = pts[i].y - pts[j].y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < 120) {
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.strokeStyle = `rgba(0,217,146,${(1 - d/120) * .12})`;
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
 
-  // ── Copy npm command ──────────────────────
-  const copyHero = document.getElementById('copyHero');
+  resize(); makeParticles(); draw();
+  window.addEventListener('resize', () => { resize(); makeParticles(); });
+})();
+
+/* ══════════════════════════════════════════════
+   6. TYPEWRITER on hero "automatizado"
+══════════════════════════════════════════════ */
+(function initTypewriter() {
+  const el = document.querySelector('.hero h1 .line-green');
+  if (!el) return;
+  const text = el.textContent.trim();
+  el.textContent = '';
+  const cursor = document.createElement('span');
+  cursor.className = 'tw-cursor';
+  el.appendChild(cursor);
+  let i = 0;
+  function type() {
+    if (i <= text.length) {
+      el.textContent = text.slice(0, i);
+      el.appendChild(cursor);
+      i++;
+      setTimeout(type, i === 1 ? 600 : 55);
+    } else {
+      setTimeout(() => cursor.style.display = 'none', 2000);
+    }
+  }
+  // Start after reveal animation
+  setTimeout(type, 900);
+})();
+
+/* ══════════════════════════════════════════════
+   7. SPLIT TEXT  (hero h1 first line)
+══════════════════════════════════════════════ */
+(function initSplitText() {
+  const h1 = document.querySelector('.hero h1');
+  if (!h1) return;
+  const firstNode = h1.childNodes[0];
+  if (!firstNode || firstNode.nodeType !== 3) return;
+  const words = firstNode.textContent.trim().split(/\s+/);
+  const frag  = document.createDocumentFragment();
+  words.forEach((w, i) => {
+    const span = document.createElement('span');
+    span.className = 'word-anim';
+    span.style.animationDelay = (0.15 + i * 0.1) + 's';
+    span.textContent = w;
+    frag.appendChild(span);
+    if (i < words.length - 1) frag.appendChild(document.createTextNode(' '));
+  });
+  firstNode.replaceWith(frag);
+})();
+
+/* ══════════════════════════════════════════════
+   8. REVEAL (IntersectionObserver)
+══════════════════════════════════════════════ */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, {threshold:.12, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ══════════════════════════════════════════════
+   9. STAT COUNTER ANIMATION
+══════════════════════════════════════════════ */
+const statDefs = [
+  {selector:'.stat:nth-child(1) .stat-val', from:0,  to:50,  suffix:'+',  dur:1600},
+  {selector:'.stat:nth-child(2) .stat-val', from:80, to:98,  suffix:'%',  dur:1400},
+  {selector:'.stat:nth-child(3) .stat-val', from:1,  to:3,   suffix:'×',  dur:1200},
+];
+const statIO = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const row = e.target.closest('.stats-row');
+    if (!row || row.dataset.counted) return;
+    row.dataset.counted = '1';
+    statDefs.forEach(({selector, from, to, suffix, dur}) => {
+      const el = document.querySelector(selector);
+      if (!el) return;
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(from + (to - from) * ease) + suffix;
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+    statIO.unobserve(e.target);
+  });
+}, {threshold:.4});
+const statsRow = document.querySelector('.stats-row');
+if (statsRow) statIO.observe(statsRow);
+
+/* ══════════════════════════════════════════════
+   10. 3D CARD TILT  (desktop)
+══════════════════════════════════════════════ */
+if (!isMobile) {
+  document.querySelectorAll('.hero-card, .svc-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r   = card.getBoundingClientRect();
+      const x   = (e.clientX - r.left)  / r.width  - .5;
+      const y   = (e.clientY - r.top)   / r.height - .5;
+      const mag = card.classList.contains('hero-card') ? 10 : 8;
+      card.style.transform =
+        `perspective(900px) rotateY(${x*mag}deg) rotateX(${-y*mag}deg) translateZ(6px)`;
+      card.style.transition = 'transform .08s ease';
+      // spotlight
+      if (card.classList.contains('svc-card')) {
+        card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        card.style.setProperty('--my', (e.clientY - r.top)  + 'px');
+      }
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform  = 'perspective(900px) rotateY(0) rotateX(0) translateZ(0)';
+      card.style.transition = 'transform .5s cubic-bezier(.22,1,.36,1)';
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════
+   11. MAGNETIC BUTTONS
+══════════════════════════════════════════════ */
+if (!isMobile) {
+  document.querySelectorAll('.btn-solid, .btn-ghost-green').forEach(btn => {
+    btn.addEventListener('mousemove', e => {
+      const r  = btn.getBoundingClientRect();
+      const x  = (e.clientX - r.left - r.width  / 2) * .25;
+      const y  = (e.clientY - r.top  - r.height / 2) * .25;
+      btn.style.transform = `translate(${x}px,${y}px)`;
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'translate(0,0)';
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════
+   12. COPY BUTTON
+══════════════════════════════════════════════ */
+const copyHero = document.getElementById('copyHero');
+if (copyHero) {
   copyHero.addEventListener('click', () => {
     navigator.clipboard.writeText('npm install @eliasai/core').then(() => {
       const t = copyHero.querySelector('.copy-cmd-text');
@@ -1593,11 +1925,16 @@ footer{
       setTimeout(() => { t.innerHTML = orig; }, 2000);
     });
   });
+}
 
-  // ── Marquee pause on reduced motion ───────
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    document.querySelector('.marquee-track').style.animationPlayState = 'paused';
-  }
+/* ══════════════════════════════════════════════
+   13. MARQUEE  (pause on reduced motion)
+══════════════════════════════════════════════ */
+if (matchMedia('(prefers-reduced-motion:reduce)').matches) {
+  const mt = document.querySelector('.marquee-track');
+  if (mt) mt.style.animationPlayState = 'paused';
+}
+
 })();
 </script>
 </body>
